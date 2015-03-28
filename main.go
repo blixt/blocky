@@ -10,7 +10,10 @@ import (
 
 var log = logging.MustGetLogger("blocky")
 
-const logFormat = "%{time:15:04:05.000} %{level:.4s} [%{shortfunc}] %{message}"
+const (
+	logFormat = "%{time:15:04:05.000} %{level:.4s} [%{shortfunc}] %{message}"
+	listen    = ":1987"
+)
 
 func client(ws *websocket.Conn) {
 }
@@ -25,7 +28,7 @@ func main() {
 	logging.SetBackend(formatter)
 
 	// Start the websocket server.
-	log.Info("Listening on port 8080...")
+	log.Info("Listening on %s...", listen)
 	http.Handle("/socket", websocket.Handler(client))
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(listen, nil))
 }
