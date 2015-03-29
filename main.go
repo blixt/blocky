@@ -10,12 +10,14 @@ import (
 	"./blocky"
 )
 
-var log = logging.MustGetLogger("blocky")
+var (
+	context = blocky.Context{Version: "0.1.0.001"}
+	log     = logging.MustGetLogger("blocky")
+)
 
 const (
 	logFormat = "%{time:15:04:05.000} %{level:.4s} [%{shortfunc}] %{message}"
 	listen    = ":1987"
-	version   = "0.1.0.001"
 )
 
 func client(ws *websocket.Conn) {
@@ -28,10 +30,7 @@ func client(ws *websocket.Conn) {
 	// Shake hands.
 	var hello *blocky.Hello
 	websocket.JSON.Receive(ws, &hello)
-	websocket.JSON.Send(ws, &blocky.Welcome{
-		Session:       blocky.GetOrCreateSession(hello.SessionId),
-		ServerVersion: version,
-	})
+	websocket.JSON.Send(ws, blocky.Handshake(context, hello))
 
 	//
 }
