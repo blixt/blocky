@@ -14,8 +14,9 @@ import (
 )
 
 var (
-	context = blocky.Context{Version: "0.1.0.001"}
-	log     = logging.MustGetLogger("blocky")
+	context  = blocky.Context{Version: "0.1.0.001"}
+	log      = logging.MustGetLogger("blocky")
+	universe = blocky.NewUniverse()
 )
 
 const (
@@ -83,6 +84,19 @@ func disconnectClient(ws *websocket.Conn) {
 	log.Info("Client disconnected")
 }
 
+func receiveToInteractor(ws *websocket.Conn, ui *blocky.UniverseInteractor) {
+	for {
+		if packet, err := receive(ws); err != nil {
+			log.Debug("Stopping receive: %s", err)
+			ui.Close()
+			break
+		} else {
+			log.Debug("Received packet %T", packet)
+			ui.Put(packet)
+		}
+	}
+}
+
 func client(ws *websocket.Conn) {
 	defer disconnectClient(ws)
 	log.Info("Client connected")
@@ -93,6 +107,18 @@ func client(ws *websocket.Conn) {
 	welcome := blocky.Handshake(context, hello)
 	mustSend(ws, welcome)
 	log.Info("Client handshake complete (%s)", welcome.Session)
+
+	// Let the universe deal with the rest.
+	ui := universe.GetInteractor(welcome.Session)
+	go receiveToInteractor(ws, ui)
+	for {
+		if packet := ui.Get(); packet != nil {
+			log.Debug("Sending packet %T", packet)
+			mustSend(ws, packet)
+		} else {
+			break
+		}
+	}
 }
 
 func main() {

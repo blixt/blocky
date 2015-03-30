@@ -9,27 +9,35 @@ func NewUniverse() *Universe {
 	return &Universe{}
 }
 
-func (u *Universe) GetInteractor() *UniverseInteractor {
-	return NewUniverseInteractor(u)
+func (u *Universe) GetInteractor(s *Session) *UniverseInteractor {
+	return NewUniverseInteractor(u, s)
 }
 
 type UniverseInteractor struct {
 	universe *Universe
+	session  *Session
 	in       chan interface{}
 	out      chan interface{}
 }
 
-func NewUniverseInteractor(u *Universe) *UniverseInteractor {
+func NewUniverseInteractor(u *Universe, s *Session) *UniverseInteractor {
 	return &UniverseInteractor{
 		universe: u,
+		session:  s,
 		in:       make(chan interface{}),
 		out:      make(chan interface{}),
 	}
 }
 
-func (ui *UniverseInteractor) Close() error {
-	ui.out <- &Bye{"Closing connection"}
+func (ui *UniverseInteractor) Close() {
 	close(ui.in)
 	close(ui.out)
-	return nil
+}
+
+func (ui *UniverseInteractor) Get() interface{} {
+	return <-ui.out
+}
+
+func (ui *UniverseInteractor) Put(packet interface{}) {
+	ui.in <- packet
 }
