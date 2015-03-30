@@ -1,5 +1,9 @@
 package blocky
 
+type Bye struct {
+	Message string
+}
+
 type Hello struct {
 	SessionId     Id
 	ClientVersion string

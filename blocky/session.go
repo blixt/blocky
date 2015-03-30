@@ -1,5 +1,9 @@
 package blocky
 
+import (
+	"fmt"
+)
+
 type Session struct {
 	Id     Id
 	Player *Player
@@ -23,4 +27,8 @@ func NewSession() *Session {
 	session := &Session{Id: NewId(), Player: NewPlayer()}
 	sessions[session.Id] = session
 	return session
+}
+
+func (s *Session) String() string {
+	return fmt.Sprintf("Session: %s Player: %s Name: %s", s.Id, s.Player.Id, s.Player.Name)
 }
