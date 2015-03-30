@@ -127,6 +127,9 @@ func main() {
 	formatter := logging.NewBackendFormatter(backend, logging.MustStringFormatter(logFormat))
 	logging.SetBackend(formatter)
 
+	// Run the universe (no big deal).
+	go universe.Run()
+
 	// Start the websocket server.
 	log.Info("Starting server on %s...", listen)
 	http.Handle("/socket", websocket.Handler(client))

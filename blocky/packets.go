@@ -9,6 +9,10 @@ type Hello struct {
 	ClientVersion string
 }
 
+type Ping struct {
+	Time int64
+}
+
 type Welcome struct {
 	Session       *Session
 	ServerVersion string
