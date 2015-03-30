@@ -84,15 +84,17 @@ func disconnectClient(ws *websocket.Conn) {
 	log.Info("Client disconnected")
 }
 
-func receiveToInteractor(ws *websocket.Conn, ui *blocky.UniverseInteractor) {
+func receiveToInterface(ws *websocket.Conn, i *blocky.Interface) {
 	for {
 		if packet, err := receive(ws); err != nil {
 			log.Debug("Stopping receive: %s", err)
-			ui.Close()
+			i.Close()
 			break
 		} else {
 			log.Debug("Received packet %T", packet)
-			ui.Handle(packet)
+			if err := i.Put(packet); err != nil {
+				log.Warning("Client caused error: %s", err)
+			}
 		}
 	}
 }
@@ -101,18 +103,11 @@ func client(ws *websocket.Conn) {
 	defer disconnectClient(ws)
 	log.Info("Client connected")
 
-	// Shake hands.
-	hello := mustReceive(ws).(*blocky.Hello)
-	log.Debug("Client version: %s", hello.ClientVersion)
-	welcome := blocky.Handshake(context, hello)
-	mustSend(ws, welcome)
-	log.Info("Client handshake complete (%s)", welcome.Session)
-
-	// Let the universe deal with the rest.
-	ui := universe.GetInteractor(welcome.Session)
-	go receiveToInteractor(ws, ui)
+	// Interface with the universe.
+	i := universe.NewInterface(context)
+	go receiveToInterface(ws, i)
 	for {
-		if packet := ui.Get(); packet != nil {
+		if packet := i.Get(); packet != nil {
 			log.Debug("Sending packet %T", packet)
 			mustSend(ws, packet)
 		} else {

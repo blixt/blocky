@@ -6,40 +6,23 @@ import (
 )
 
 type Universe struct {
-	activePlayers []*Player
-	interactors   []*UniverseInteractor
+	auth       *Authenticator
+	interfaces []*Interface
 }
 
 func NewUniverse() *Universe {
 	return &Universe{}
 }
 
-func (u *Universe) GetInteractor(s *Session) *UniverseInteractor {
-	ui := NewUniverseInteractor(u, s)
-	u.interactors = append(u.interactors, ui)
-	return ui
+func (u *Universe) Handle(i *Interface, packet interface{}) error {
+	return errors.New("Not implemented")
 }
 
-func (u *Universe) Handle(ui *UniverseInteractor, packet interface{}) {
-}
-
-func (u *Universe) putAll(packet interface{}) {
-	count, deleted := len(u.interactors), 0
-	for i, ui := range u.interactors {
-		if err := ui.put(packet); err != nil {
-			// Forget this interactor because it's not active anymore.
-			deleted++
-			u.interactors[i] = u.interactors[count-deleted]
-		}
-	}
-	if deleted > 0 {
-		// Ensure that we don't keep garbage references around.
-		for i := deleted; i > 0; i-- {
-			u.interactors[count-i] = nil
-		}
-		// Shorten the slice.
-		u.interactors = u.interactors[:count-deleted]
-	}
+func (u *Universe) NewInterface(c Context) *Interface {
+	i := NewInterface(c, u)
+	i.PushHandler(u.auth)
+	u.interfaces = append(u.interfaces, i)
+	return i
 }
 
 func (u *Universe) Run() {
@@ -49,51 +32,21 @@ func (u *Universe) Run() {
 	}
 }
 
-type UniverseInteractor struct {
-	universe *Universe
-	session  *Session
-	open     bool
-	channel  chan interface{}
-}
-
-func NewUniverseInteractor(u *Universe, s *Session) *UniverseInteractor {
-	return &UniverseInteractor{
-		universe: u,
-		session:  s,
-		open:     true,
-		channel:  make(chan interface{}, 10),
+func (u *Universe) putAll(packet interface{}) {
+	count, deleted := len(u.interfaces), 0
+	for index, i := range u.interfaces {
+		if err := i.putClient(packet); err != nil {
+			// Forget this interface because it's not active anymore.
+			deleted++
+			u.interfaces[index] = u.interfaces[count-deleted]
+		}
 	}
-}
-
-func (ui *UniverseInteractor) Close() {
-	ui.open = false
-	close(ui.channel)
-}
-
-// Gets a packet for the client (or waits until one is available).
-func (ui *UniverseInteractor) Get() interface{} {
-	return <-ui.channel
-}
-
-// Handles a packet from the client.
-func (ui *UniverseInteractor) Handle(packet interface{}) error {
-	if !ui.open {
-		return errors.New("The universe interactor is closed")
-	}
-	ui.universe.Handle(ui, packet)
-	return nil
-}
-
-// Sends a packet to the client.
-func (ui *UniverseInteractor) put(packet interface{}) error {
-	if !ui.open {
-		return errors.New("The universe interactor is closed")
-	}
-	select {
-	case ui.channel <- packet:
-		return nil
-	default:
-		ui.Close()
-		return errors.New("Universe interactor overflowed with packets")
+	if deleted > 0 {
+		// Ensure that we don't keep garbage references around.
+		for index := deleted; index > 0; index-- {
+			u.interfaces[count-index] = nil
+		}
+		// Shorten the slice.
+		u.interfaces = u.interfaces[:count-deleted]
 	}
 }
