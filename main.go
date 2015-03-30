@@ -92,7 +92,7 @@ func receiveToInteractor(ws *websocket.Conn, ui *blocky.UniverseInteractor) {
 			break
 		} else {
 			log.Debug("Received packet %T", packet)
-			ui.Put(packet)
+			ui.Handle(packet)
 		}
 	}
 }

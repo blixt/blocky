@@ -20,10 +20,13 @@ func (u *Universe) GetInteractor(s *Session) *UniverseInteractor {
 	return ui
 }
 
-func (u *Universe) PutAll(packet interface{}) {
+func (u *Universe) Handle(ui *UniverseInteractor, packet interface{}) {
+}
+
+func (u *Universe) putAll(packet interface{}) {
 	count, deleted := len(u.interactors), 0
 	for i, ui := range u.interactors {
-		if err := ui.Put(packet); err != nil {
+		if err := ui.put(packet); err != nil {
 			// Forget this interactor because it's not active anymore.
 			deleted++
 			u.interactors[i] = u.interactors[count-deleted]
@@ -41,7 +44,7 @@ func (u *Universe) PutAll(packet interface{}) {
 
 func (u *Universe) Run() {
 	for {
-		u.PutAll(&Ping{time.Now().Unix() * 1000})
+		u.putAll(&Ping{time.Now().Unix() * 1000})
 		time.Sleep(5 * time.Second)
 	}
 }
@@ -67,11 +70,22 @@ func (ui *UniverseInteractor) Close() {
 	close(ui.channel)
 }
 
+// Gets a packet for the client (or waits until one is available).
 func (ui *UniverseInteractor) Get() interface{} {
 	return <-ui.channel
 }
 
-func (ui *UniverseInteractor) Put(packet interface{}) error {
+// Handles a packet from the client.
+func (ui *UniverseInteractor) Handle(packet interface{}) error {
+	if !ui.open {
+		return errors.New("The universe interactor is closed")
+	}
+	ui.universe.Handle(ui, packet)
+	return nil
+}
+
+// Sends a packet to the client.
+func (ui *UniverseInteractor) put(packet interface{}) error {
 	if !ui.open {
 		return errors.New("The universe interactor is closed")
 	}
