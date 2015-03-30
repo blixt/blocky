@@ -6,10 +6,6 @@ import (
 	"math/big"
 )
 
-type Context struct {
-	Version string
-}
-
 type Id string
 
 func NewId() Id {

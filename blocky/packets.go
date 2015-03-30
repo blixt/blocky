@@ -18,9 +18,9 @@ type Welcome struct {
 	ServerVersion string
 }
 
-func Handshake(context Context, hello *Hello) *Welcome {
+func Handshake(hello *Hello) *Welcome {
 	return &Welcome{
 		Session:       GetOrCreateSession(hello.SessionId),
-		ServerVersion: context.Version,
+		ServerVersion: "0.1.0.001",
 	}
 }

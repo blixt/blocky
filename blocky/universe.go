@@ -1,52 +1,59 @@
 package blocky
 
 import (
-	"errors"
+	"fmt"
 	"time"
+
+	"github.com/blixt/geomys"
+	"golang.org/x/net/websocket"
 )
 
 type Universe struct {
-	auth       *Authenticator
-	interfaces []*Interface
+	geomys.WebSocketServerBase
+	Server *geomys.Server
 }
 
 func NewUniverse() *Universe {
-	return &Universe{}
+	return &Universe{
+		Server: geomys.NewServer(),
+	}
 }
 
-func (u *Universe) Handle(i *Interface, packet interface{}) error {
-	return errors.New("Not implemented")
-}
-
-func (u *Universe) NewInterface(c Context) *Interface {
-	i := NewInterface(c, u)
-	i.PushHandler(u.auth)
-	u.interfaces = append(u.interfaces, i)
+func (u *Universe) GetInterface(ws *websocket.Conn) *geomys.Interface {
+	i := u.Server.NewInterface(nil)
+	i.PushHandler(u.handleDefault)
+	i.PushHandler(u.handleAuth)
 	return i
+}
+
+func (u *Universe) GetMessage(msgType string) (interface{}, error) {
+	switch msgType {
+	case "Hello":
+		return new(Hello), nil
+	default:
+		return nil, fmt.Errorf("Unsupported message type %s", msgType)
+	}
 }
 
 func (u *Universe) Run() {
 	for {
-		u.putAll(&Ping{time.Now().Unix() * 1000})
+		u.Server.SendAll(&Ping{time.Now().Unix() * 1000})
 		time.Sleep(5 * time.Second)
 	}
 }
 
-func (u *Universe) putAll(packet interface{}) {
-	count, deleted := len(u.interfaces), 0
-	for index, i := range u.interfaces {
-		if err := i.putClient(packet); err != nil {
-			// Forget this interface because it's not active anymore.
-			deleted++
-			u.interfaces[index] = u.interfaces[count-deleted]
-		}
+func (u *Universe) handleAuth(i *geomys.Interface, msg interface{}) error {
+	if hello, ok := msg.(*Hello); ok {
+		// Shake hands.
+		welcome := Handshake(hello)
+		i.Send(welcome)
+		i.PopHandler()
+		return nil
+	} else {
+		return fmt.Errorf("Expected a Hello message, got %T", msg)
 	}
-	if deleted > 0 {
-		// Ensure that we don't keep garbage references around.
-		for index := deleted; index > 0; index-- {
-			u.interfaces[count-index] = nil
-		}
-		// Shorten the slice.
-		u.interfaces = u.interfaces[:count-deleted]
-	}
+}
+
+func (u *Universe) handleDefault(i *geomys.Interface, msg interface{}) error {
+	return nil
 }
