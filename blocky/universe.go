@@ -8,21 +8,25 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+// TODO: The universe should support many worlds.
 type Universe struct {
 	geomys.WebSocketServerBase
 	Server   *geomys.Server
+	World    *World
 	lastPing *Ping
 }
 
 func NewUniverse() *Universe {
 	return &Universe{
 		Server: geomys.NewServer(),
+		World:  NewWorld(),
 	}
 }
 
 func (u *Universe) GetInterface(ws *websocket.Conn) *geomys.Interface {
 	i := u.Server.NewInterface(nil)
-	i.PushHandler(u.handler)
+	i.PushHandler(u.Handler)
+	i.PushHandler(u.World.Handler)
 	i.PushHandler(SessionHandler)
 	return i
 }
@@ -46,7 +50,7 @@ func (u *Universe) Run() {
 	}
 }
 
-func (u *Universe) handler(i *geomys.Interface, msg interface{}) error {
+func (u *Universe) Handler(i *geomys.Interface, msg interface{}) error {
 	session := i.Context.(*Session)
 	switch msg := msg.(type) {
 	case *Ping:
