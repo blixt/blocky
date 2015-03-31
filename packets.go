@@ -1,4 +1,4 @@
-package blocky
+package main
 
 import (
 	"time"

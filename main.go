@@ -6,13 +6,11 @@ import (
 
 	"github.com/blixt/geomys"
 	"github.com/op/go-logging"
-
-	"./blocky"
 )
 
 var (
 	log      = logging.MustGetLogger("blocky")
-	universe = blocky.NewUniverse()
+	universe = NewUniverse()
 )
 
 const (
