@@ -2,6 +2,8 @@ package blocky
 
 import (
 	"fmt"
+
+	"github.com/blixt/geomys"
 )
 
 type Session struct {
@@ -31,4 +33,18 @@ func NewSession() *Session {
 
 func (s *Session) String() string {
 	return fmt.Sprintf("Session: %s Player: %s Name: %s", s.Id, s.Player.Id, s.Player.Name)
+}
+
+func SessionHandler(i *geomys.Interface, msg interface{}) error {
+	switch msg := msg.(type) {
+	case *Hello:
+		// Shake hands.
+		welcome := Handshake(msg)
+		i.Context = welcome.Session
+		i.Send(welcome)
+		i.PopHandler()
+	default:
+		return fmt.Errorf("Unexpected message %T", msg)
+	}
+	return nil
 }

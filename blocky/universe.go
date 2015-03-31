@@ -22,8 +22,8 @@ func NewUniverse() *Universe {
 
 func (u *Universe) GetInterface(ws *websocket.Conn) *geomys.Interface {
 	i := u.Server.NewInterface(nil)
-	i.PushHandler(u.handleDefault)
-	i.PushHandler(u.handleAuth)
+	i.PushHandler(u.handler)
+	i.PushHandler(SessionHandler)
 	return i
 }
 
@@ -46,21 +46,7 @@ func (u *Universe) Run() {
 	}
 }
 
-func (u *Universe) handleAuth(i *geomys.Interface, msg interface{}) error {
-	switch msg := msg.(type) {
-	case *Hello:
-		// Shake hands.
-		welcome := Handshake(msg)
-		i.Context = welcome.Session
-		i.Send(welcome)
-		i.PopHandler()
-	default:
-		return fmt.Errorf("Unexpected message %T", msg)
-	}
-	return nil
-}
-
-func (u *Universe) handleDefault(i *geomys.Interface, msg interface{}) error {
+func (u *Universe) handler(i *geomys.Interface, msg interface{}) error {
 	session := i.Context.(*Session)
 	switch msg := msg.(type) {
 	case *Ping:
