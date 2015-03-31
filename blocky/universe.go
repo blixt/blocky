@@ -10,7 +10,8 @@ import (
 
 type Universe struct {
 	geomys.WebSocketServerBase
-	Server *geomys.Server
+	Server   *geomys.Server
+	lastPing *Ping
 }
 
 func NewUniverse() *Universe {
@@ -30,6 +31,8 @@ func (u *Universe) GetMessage(msgType string) (interface{}, error) {
 	switch msgType {
 	case "Hello":
 		return new(Hello), nil
+	case "Ping":
+		return new(Ping), nil
 	default:
 		return nil, fmt.Errorf("Unsupported message type %s", msgType)
 	}
@@ -37,23 +40,36 @@ func (u *Universe) GetMessage(msgType string) (interface{}, error) {
 
 func (u *Universe) Run() {
 	for {
-		u.Server.SendAll(&Ping{time.Now().Unix() * 1000})
+		u.lastPing = NewPing()
+		u.Server.SendAll(u.lastPing)
 		time.Sleep(5 * time.Second)
 	}
 }
 
 func (u *Universe) handleAuth(i *geomys.Interface, msg interface{}) error {
-	if hello, ok := msg.(*Hello); ok {
+	switch msg := msg.(type) {
+	case *Hello:
 		// Shake hands.
-		welcome := Handshake(hello)
+		welcome := Handshake(msg)
+		i.Context = welcome.Session
 		i.Send(welcome)
 		i.PopHandler()
-		return nil
-	} else {
-		return fmt.Errorf("Expected a Hello message, got %T", msg)
+	default:
+		return fmt.Errorf("Unexpected message %T", msg)
 	}
+	return nil
 }
 
 func (u *Universe) handleDefault(i *geomys.Interface, msg interface{}) error {
+	session := i.Context.(*Session)
+	switch msg := msg.(type) {
+	case *Ping:
+		if msg.Id == u.lastPing.Id {
+			session.Player.Ping = NewPing().Time - u.lastPing.Time
+			session.Player.PingTime = time.Now()
+		}
+	default:
+		return fmt.Errorf("Unexpected message %T", msg)
+	}
 	return nil
 }

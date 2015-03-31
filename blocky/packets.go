@@ -1,5 +1,9 @@
 package blocky
 
+import (
+	"time"
+)
+
 type Bye struct {
 	Message string
 }
@@ -10,7 +14,15 @@ type Hello struct {
 }
 
 type Ping struct {
-	Time int64
+	Id   Id
+	Time float64
+}
+
+func NewPing() *Ping {
+	return &Ping{
+		NewId(),
+		float64(time.Now().UnixNano()) / float64(time.Millisecond),
+	}
 }
 
 type Welcome struct {

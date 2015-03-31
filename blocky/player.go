@@ -1,8 +1,14 @@
 package blocky
 
+import (
+	"time"
+)
+
 type Player struct {
-	Id   Id
-	Name string
+	Id       Id
+	Name     string
+	Ping     float64
+	PingTime time.Time
 }
 
 var players = make(map[Id]*Player)
