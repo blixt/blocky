@@ -35,9 +35,7 @@ func (w *World) Handler(i *geomys.Interface, event *geomys.Event) error {
 	if event.Type == "message" {
 		switch msg := event.Value.(type) {
 		case *MovePlayer:
-			if err := session.Player.Move(msg.X, msg.Y); err != nil {
-				return err
-			}
+			return session.Player.Move(msg.X, msg.Y)
 		}
 	}
 	return nil
