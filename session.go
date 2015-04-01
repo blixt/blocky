@@ -45,21 +45,25 @@ func Handshake(hello *Hello) (*Welcome, error) {
 }
 
 // Handles incoming "Hello" messages, discards everything else.
-func SessionHandler(i *geomys.Interface, msg interface{}) error {
-	switch msg := msg.(type) {
-	case *Hello:
-		// Shake hands.
-		if welcome, err := Handshake(msg); err != nil {
-			return err
-		} else {
-			// Handshake succeeded, set session context and let client know.
-			i.Context = welcome.Session
-			i.Send(welcome)
-			// Relinquish control to the other handlers.
-			i.PopHandler()
+func SessionHandler(i *geomys.Interface, event *geomys.Event) error {
+	if event.Type == "message" {
+		switch msg := event.Value.(type) {
+		case *Hello:
+			// Shake hands.
+			if welcome, err := Handshake(msg); err != nil {
+				return err
+			} else {
+				// Handshake succeeded, set session context and let client know.
+				i.Context = welcome.Session
+				i.Send(welcome)
+				// Remove this handler now that the user has been authenticated.
+				i.RemoveHandler()
+			}
+		default:
+			return fmt.Errorf("Unexpected message %T", msg)
 		}
-	default:
-		return fmt.Errorf("Unexpected message %T", msg)
 	}
+	// Don't let any of the other handlers handle events.
+	event.StopPropagation()
 	return nil
 }

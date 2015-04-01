@@ -6,11 +6,10 @@ import (
 )
 
 type Player struct {
-	Id       Id
+	*Entity
 	Name     string
-	Ping     float64
-	PingTime time.Time
-	X, Y     int
+	Ping     float64   `json:"-"`
+	PingTime time.Time `json:"-"`
 	lastMove time.Time
 }
 
@@ -21,7 +20,7 @@ func GetPlayer(id Id) *Player {
 }
 
 func NewPlayer() *Player {
-	player := &Player{Id: NewId(), Name: "Guest"}
+	player := &Player{Entity: NewEntity("player"), Name: "Guest"}
 	players[player.Id] = player
 	return player
 }
@@ -34,8 +33,9 @@ func (p *Player) Move(dx, dy int) error {
 	} else if time.Now().Sub(p.lastMove) < 100*time.Millisecond {
 		return errors.New("Can only move once every 100 ms")
 	}
-	p.X += dx
-	p.Y += dy
+	if err := p.Entity.Move(dx, dy); err != nil {
+		return err
+	}
 	p.lastMove = time.Now()
 	return nil
 }
