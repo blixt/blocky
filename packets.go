@@ -11,12 +11,20 @@ type Bye struct {
 
 // Lets the client know that the player entered a world.
 type EnterWorld struct {
-	Player *Player
-	World  *World
+	Player   *Player
+	World    *World
+	Entities []*Entity
 }
 
 func NewEnterWorld(p *Player) *EnterWorld {
-	return &EnterWorld{p, p.World}
+	entities := make([]*Entity, 0)
+	for id, entity := range p.World.entities {
+		// TODO: Filter so that only nearby entities are announced.
+		if id != p.Id {
+			entities = append(entities, entity)
+		}
+	}
+	return &EnterWorld{p, p.World, entities}
 }
 
 // Notifies the client of the state of a new or existing entity.
