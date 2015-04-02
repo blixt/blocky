@@ -33,8 +33,12 @@ func (u *Universe) GetInterface(ws *websocket.Conn) *geomys.Interface {
 
 func (u *Universe) GetMessage(msgType string) (interface{}, error) {
 	switch msgType {
+	case "Bye":
+		return new(Bye), nil
 	case "Hello":
 		return new(Hello), nil
+	case "LoadRegion":
+		return new(LoadRegion), nil
 	case "Ping":
 		return new(Ping), nil
 	default:

@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/blixt/geomys"
 )
@@ -39,6 +40,14 @@ func (w *World) AddEntity(e *Entity) error {
 	return nil
 }
 
+func (w *World) GetRegion(x, y int) (region *Region, err error) {
+	region = w.regions[fmt.Sprintf("%d:%d", x, y)]
+	if region == nil {
+		err = errors.New("The requested region does not exist")
+	}
+	return
+}
+
 func (w *World) Handler(i *geomys.Interface, event *geomys.Event) error {
 	session := i.Context.(*Session)
 	switch event.Type {
@@ -48,6 +57,15 @@ func (w *World) Handler(i *geomys.Interface, event *geomys.Event) error {
 		i.Send(NewEnterWorld(session.Player))
 	case "message":
 		switch msg := event.Value.(type) {
+		case *LoadRegion:
+			if msg.WorldId != w.Id {
+				return errors.New("Player sent the wrong world id")
+			}
+			if region, err := w.GetRegion(msg.X, msg.Y); err != nil {
+				return err
+			} else {
+				i.Send(region)
+			}
 		case *MovePlayer:
 			return session.Player.Move(msg.X, msg.Y)
 		}

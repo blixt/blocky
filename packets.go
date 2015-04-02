@@ -41,6 +41,12 @@ type Hello struct {
 	ClientVersion string
 }
 
+// A request from the client to load a region.
+type LoadRegion struct {
+	WorldId Id
+	X, Y    int
+}
+
 // Requests that the player be moved.
 type MovePlayer struct {
 	X, Y int
