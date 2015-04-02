@@ -44,12 +44,13 @@ func (u *Universe) GetMessage(msgType string) (interface{}, error) {
 
 func (u *Universe) Handler(i *geomys.Interface, event *geomys.Event) error {
 	session := i.Context.(*Session)
-	if event.Type == "message" {
+	switch event.Type {
+	case "message":
 		switch msg := event.Value.(type) {
 		case *Ping:
 			if msg.Id == u.lastPing.Id {
-				session.Player.Ping = NewPing().Time - u.lastPing.Time
-				session.Player.PingTime = time.Now()
+				session.Player.latency = NewPing().Time - u.lastPing.Time
+				session.Player.lastPing = time.Now()
 			}
 		default:
 			return fmt.Errorf("Unexpected message %T", msg)

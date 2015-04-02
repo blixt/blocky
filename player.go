@@ -8,9 +8,9 @@ import (
 type Player struct {
 	*Entity
 	Name     string
-	Ping     float64   `json:"-"`
-	PingTime time.Time `json:"-"`
+	latency  float64
 	lastMove time.Time
+	lastPing time.Time
 }
 
 var players = make(map[Id]*Player)
@@ -20,9 +20,30 @@ func GetPlayer(id Id) *Player {
 }
 
 func NewPlayer() *Player {
-	player := &Player{Entity: NewEntity("player"), Name: "Guest"}
+	player := &Player{
+		Entity:   NewEntity("player"),
+		Name:     "Guest",
+		lastPing: time.Now(),
+	}
 	players[player.Id] = player
 	return player
+}
+
+func (p *Player) GoToWorld(w *World) error {
+	if p.World != nil {
+		if err := p.World.RemoveEntity(p.Entity); err != nil {
+			return err
+		}
+		p.World = nil
+	}
+	if err := w.AddEntity(p.Entity); err != nil {
+		return err
+	} else {
+		p.World = w
+		p.X = w.StartX
+		p.Y = w.StartY
+		return nil
+	}
 }
 
 func (p *Player) Move(dx, dy int) error {

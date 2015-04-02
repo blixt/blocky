@@ -9,6 +9,16 @@ type Bye struct {
 	Message string
 }
 
+// Lets the client know that the player entered a world.
+type EnterWorld struct {
+	Player *Player
+	World  *World
+}
+
+func NewEnterWorld(p *Player) *EnterWorld {
+	return &EnterWorld{p, p.World}
+}
+
 // Notifies the client of the state of a new or existing entity.
 type EntityState struct {
 	Id    Id

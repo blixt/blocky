@@ -58,12 +58,13 @@ func SessionHandler(i *geomys.Interface, event *geomys.Event) error {
 				i.Send(welcome)
 				// Remove this handler now that the user has been authenticated.
 				i.RemoveHandler()
+				event.StopPropagation()
+				// Let other handlers know that the user has been authenticated.
+				i.Dispatch(geomys.NewEvent("auth", welcome.Session))
 			}
 		default:
 			return fmt.Errorf("Unexpected message %T", msg)
 		}
 	}
-	// Don't let any of the other handlers handle events.
-	event.StopPropagation()
 	return nil
 }
