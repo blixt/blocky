@@ -49,6 +49,10 @@ func (u *Universe) GetMessage(msgType string) (interface{}, error) {
 func (u *Universe) Handler(i *geomys.Interface, event *geomys.Event) error {
 	session := i.Context.(*Session)
 	switch event.Type {
+	case "error":
+		if err, ok := event.Value.(error); ok {
+			i.Send(NewError(err.Error()))
+		}
 	case "message":
 		switch msg := event.Value.(type) {
 		case *Ping:

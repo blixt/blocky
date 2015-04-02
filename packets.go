@@ -27,6 +27,14 @@ func NewEnterWorld(p *Player) *EnterWorld {
 	return &EnterWorld{p, p.World, entities}
 }
 
+type Error struct {
+	Message string
+}
+
+func NewError(message string) *Error {
+	return &Error{message}
+}
+
 // Notifies the client of the state of a new or existing entity.
 type EntityState struct {
 	Id    Id
