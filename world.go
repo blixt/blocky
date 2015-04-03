@@ -20,16 +20,48 @@ type World struct {
 }
 
 func NewWorld() *World {
-	return &World{
+	world := &World{
 		Id:       NewId(),
 		entities: make(map[Id]*Entity),
 		regions:  make(map[string]*Region),
 	}
+	// TODO: Create regions dynamically.
+	region := NewRegion(0, 0)
+	for i := 0; i < RegionSize; i++ {
+		region.SetBlock(i, 0, 1)
+		region.SetBlock(0, i, 1)
+		region.SetBlock(i, RegionSize-1, 1)
+		region.SetBlock(RegionSize-1, i, 1)
+	}
+	world.AddRegion(region)
+	return world
 }
 
 type Region struct {
 	X, Y   int
 	Blocks [RegionBlockCount]byte
+}
+
+func NewRegion(x, y int) *Region {
+	region := new(Region)
+	region.X = x
+	region.Y = y
+	return region
+}
+
+func RegionKey(x, y int) string {
+	return fmt.Sprintf("%d:%d", x, y)
+}
+
+func (r *Region) Key() string {
+	return RegionKey(r.X, r.Y)
+}
+
+func (r *Region) SetBlock(x, y int, block byte) {
+	if x < 0 || x >= RegionSize || y < 0 || y >= RegionSize {
+		panic("Region coordinates out of bounds")
+	}
+	r.Blocks[y*RegionSize+x] = block
 }
 
 func (w *World) AddEntity(e *Entity) error {
@@ -40,8 +72,17 @@ func (w *World) AddEntity(e *Entity) error {
 	return nil
 }
 
+func (w *World) AddRegion(r *Region) error {
+	key := r.Key()
+	if _, ok := w.regions[key]; ok {
+		return errors.New("That region space is already occupied in this world")
+	}
+	w.regions[key] = r
+	return nil
+}
+
 func (w *World) GetRegion(x, y int) (region *Region, err error) {
-	region = w.regions[fmt.Sprintf("%d:%d", x, y)]
+	region = w.regions[RegionKey(x, y)]
 	if region == nil {
 		err = errors.New("The requested region does not exist")
 	}
