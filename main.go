@@ -29,6 +29,7 @@ func main() {
 
 	// Start the websocket server.
 	log.Info("Starting server on %s...", listen)
+	http.Handle("/", http.FileServer(http.Dir("static")))
 	http.Handle("/socket", geomys.WebSocketHandler(universe))
 	log.Fatal(http.ListenAndServe(listen, nil))
 }
