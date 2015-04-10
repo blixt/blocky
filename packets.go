@@ -35,12 +35,30 @@ func NewError(message string) *Error {
 	return &Error{message}
 }
 
+type EntityGone struct {
+	Id Id
+}
+
+func NewEntityGone(e *Entity) *EntityGone {
+	return &EntityGone{e.Id}
+}
+
 // Notifies the client of the state of a new or existing entity.
 type EntityState struct {
 	Id    Id
 	Kind  string
 	X, Y  int
 	State int
+}
+
+func NewEntityState(e *Entity) *EntityState {
+	return &EntityState{
+		Id:    e.Id,
+		Kind:  e.Kind,
+		X:     e.X,
+		Y:     e.Y,
+		State: -1,
+	}
 }
 
 // An identification packet from the client.

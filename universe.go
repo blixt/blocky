@@ -11,22 +11,23 @@ import (
 // TODO: The universe should support many worlds.
 type Universe struct {
 	geomys.WebSocketServerBase
-	Server   *geomys.Server
-	World    *World
 	lastPing *Ping
+	server   *geomys.Server
+	world    *World
 }
 
 func NewUniverse() *Universe {
+	server := geomys.NewServer()
 	return &Universe{
-		Server: geomys.NewServer(),
-		World:  NewWorld(),
+		server: server,
+		world:  NewWorld(server),
 	}
 }
 
 func (u *Universe) GetInterface(ws *websocket.Conn) *geomys.Interface {
-	i := u.Server.NewInterface(nil)
+	i := u.server.NewInterface(nil)
 	i.PushHandler(u.Handler)
-	i.PushHandler(u.World.Handler)
+	i.PushHandler(u.world.Handler)
 	i.PushHandler(SessionHandler)
 	return i
 }
@@ -72,9 +73,12 @@ func (u *Universe) Handler(i *geomys.Interface, event *geomys.Event) error {
 }
 
 func (u *Universe) Run() {
+	// TODO: Spin up/down worlds as needed.
+	// TODO: Decide whether worlds tick with the universe or asynchronously.
+	go u.world.Run()
 	for {
 		u.lastPing = NewPing()
-		u.Server.SendAll(u.lastPing)
+		u.server.SendAll(u.lastPing)
 		time.Sleep(5 * time.Second)
 	}
 }

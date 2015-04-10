@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/blixt/geomys"
 )
@@ -17,13 +18,15 @@ type World struct {
 	StartX, StartY int
 	entities       map[Id]*Entity
 	regions        map[string]*Region
+	server         *geomys.Server
 }
 
-func NewWorld() *World {
+func NewWorld(server *geomys.Server) *World {
 	world := &World{
 		Id:       NewId(),
 		entities: make(map[Id]*Entity),
 		regions:  make(map[string]*Region),
+		server:   server,
 	}
 	// TODO: Create regions dynamically.
 	region := NewRegion(0, 0)
@@ -69,6 +72,7 @@ func (w *World) AddEntity(e *Entity) error {
 		return errors.New("That entity is already in this world")
 	}
 	w.entities[e.Id] = e
+	w.server.SendAll(NewEntityState(e))
 	return nil
 }
 
@@ -118,8 +122,15 @@ func (w *World) RemoveEntity(e *Entity) error {
 	if _, ok := w.entities[e.Id]; !ok {
 		return errors.New("That entity is not in this world")
 	}
+	w.server.SendAll(NewEntityGone(e))
 	delete(w.entities, e.Id)
 	return nil
+}
+
+func (w *World) Run() {
+	for {
+		time.Sleep(5 * time.Second)
+	}
 }
 
 func (w *World) ValidateMove(e *Entity, dx, dy int) error {
